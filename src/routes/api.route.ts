@@ -3,7 +3,8 @@ import DataSourceController from "../controllers/datasource.controller";
 import { Router } from "express";
 const apiRoute = Router();
 
-apiRoute.post('/datasource', DataSourceController.storeDataSource);
-apiRoute.post('/processquery', MainController.processQuery);
+apiRoute.post('/storeDataSource', DataSourceController.storeDataSource);
+apiRoute.post('/processQuery', MainController.processQuery);
+apiRoute.post('/processQueryFromVectorStore', MainController.processQueryFromVectorStore);
 
 export default apiRoute;
