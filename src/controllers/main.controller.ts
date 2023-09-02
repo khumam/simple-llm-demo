@@ -8,6 +8,11 @@ import { ContextualCompressionRetriever } from "langchain/retrievers/contextual_
 import { LLMChainExtractor } from "langchain/retrievers/document_compressors/chain_extract";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
+import {
+  SupabaseFilterRPCCall,
+  SupabaseVectorStore,
+} from "langchain/vectorstores/supabase";
 const prisma = new PrismaClient();
 
 export default class MainController {
@@ -52,6 +57,27 @@ export default class MainController {
         question: req.body.query,
       });
       return res.status(200).json({ data: { text: answer } });
+    } catch (err: any) {
+      return res.status(500).json({ message: err.message });
+    }
+  }
+
+  public static processQueryFromVectorStoreFromSupabase = async (req: Request, res: Response) => {
+    try {
+      const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PRIVATE_KEY, {
+        auth: { persistSession: false },
+      });
+      const store = new SupabaseVectorStore(new OpenAIEmbeddings(), {
+        client,
+        tableName: 'documents'
+      });
+      const funcFilterA: SupabaseFilterRPCCall = (rpc) =>
+        rpc
+          .filter("metadata->b::int", "lt", 2)
+          .filter("metadata->c::int", "gt", 8);
+      const searchResult = await store.similaritySearch(req.body.query, 1, funcFilterA);
+      console.log(searchResult);
+      return res.status(200).json({ data: { text: searchResult.length > 0 ? searchResult : "Sorry we can't find the answer" } });
     } catch (err: any) {
       return res.status(500).json({ message: err.message });
     }
